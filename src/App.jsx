@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 export default function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -565,13 +566,22 @@ TECH CONCEPTS:
           <div className="title">
             <span className="blink">$</span> RAHUL_SAHU@portfolio:~$
           </div>
-          <nav className="nav-links">
-            <a href="#home">[HOME]</a>
-            <a href="#about">[ABOUT]</a>
-            <a href="#experience">[EXPERIENCE]</a>
-            <a href="#projects">[PROJECTS]</a>
-            <a href="#achievements">[ACHIEVEMENTS]</a>
-            <a href="#contact">[CONTACT]</a>
+          <button 
+            className={`menu-toggle ${isMenuOpen ? 'open' : ''}`} 
+            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+            aria-label="Toggle menu"
+          >
+            <span className="bar"></span>
+            <span className="bar"></span>
+            <span className="bar"></span>
+          </button>
+          <nav className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
+            <a href="#home" onClick={() => setIsMenuOpen(false)}>[HOME]</a>
+            <a href="#about" onClick={() => setIsMenuOpen(false)}>[ABOUT]</a>
+            <a href="#experience" onClick={() => setIsMenuOpen(false)}>[EXPERIENCE]</a>
+            <a href="#projects" onClick={() => setIsMenuOpen(false)}>[PROJECTS]</a>
+            <a href="#achievements" onClick={() => setIsMenuOpen(false)}>[ACHIEVEMENTS]</a>
+            <a href="#contact" onClick={() => setIsMenuOpen(false)}>[CONTACT]</a>
           </nav>
         </div>
       </header>

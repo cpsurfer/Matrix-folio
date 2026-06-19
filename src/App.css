@@ -1249,6 +1249,11 @@ section {
 .reveal-right { transform: translateX(40px); }
 .reveal-scale { transform: scale(0.95); }
 
+/* Mobile Menu Toggle Button (hidden on desktop) */
+.menu-toggle {
+  display: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .hero-grid {
@@ -1276,18 +1281,63 @@ section {
     padding: 16px;
   }
   .header-content {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .nav-links {
+    flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Hamburger button container and bars */
+  .menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 101;
+  }
+  .menu-toggle .bar {
     width: 100%;
+    height: 2px;
+    background-color: var(--accent-color);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Cyberpunk style cross animation */
+  .menu-toggle.open .bar:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+  .menu-toggle.open .bar:nth-child(2) {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  .menu-toggle.open .bar:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* Dropdown vertical link container */
+  .nav-links {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 16px;
+    margin-top: 12px;
+    border-top: 1px dashed var(--border-glass);
+    align-items: center;
+  }
+  .nav-links.open {
+    display: flex;
   }
   .nav-links a {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    padding: 4px 0;
   }
+  
   .hero {
     padding: 24px 16px;
     min-height: auto;
@@ -1383,4 +1433,5 @@ section {
     max-height: 180px;
   }
 }
+
 

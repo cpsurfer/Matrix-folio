@@ -1263,24 +1263,112 @@ section {
 }
 
 @media (max-width: 768px) {
+  section {
+    padding: 48px 16px;
+  }
+  .section-header {
+    margin-bottom: 32px;
+  }
+  .section-header h2 {
+    font-size: 1.8rem;
+  }
   .terminal-header {
-    padding: 16px 20px;
+    padding: 16px;
   }
   .header-content {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    width: 100%;
+  }
+  .nav-links a {
+    font-size: 0.8rem;
+  }
+  .hero {
+    padding: 24px 16px;
+    min-height: auto;
+  }
+  .hero-left {
+    text-align: center;
+    align-items: center;
   }
   .hero-title {
-    font-size: 3rem;
+    font-size: clamp(2rem, 8vw, 3rem);
+    letter-spacing: -0.5px;
   }
   .hero-subtitle {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
+    margin-bottom: 16px;
   }
-  .section-header h2 {
-    font-size: 2rem;
+  .hero-desc {
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+    max-width: 100%;
+  }
+  .hero-metrics {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+  }
+  .hero-metric-card {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+  .metric-val {
+    font-size: 1.4rem;
+    margin-bottom: 0;
+  }
+  .metric-lbl {
+    font-size: 0.75rem;
+  }
+  .hero-ai-console {
+    height: 460px;
+  }
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .skills-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .achievements-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .leadership-cards {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .about-card, .skill-category, .project-card, .achievement-item, .leadership-card, .experience-card {
+    padding: 20px 16px;
+  }
+  .terminal-quote {
+    padding: 16px;
+    font-size: 0.9rem;
+    margin-top: 32px;
+  }
+  .contact-links {
+    gap: 10px;
+    width: 100%;
+  }
+  .contact-link {
+    padding: 10px 16px;
+    font-size: 0.75rem;
+    width: 100%;
+    justify-content: center;
   }
   .ai-assistant {
     width: calc(100% - 32px);
@@ -1288,4 +1376,11 @@ section {
     right: 16px;
     left: 16px;
   }
+  .ai-body.expanded {
+    max-height: 280px;
+  }
+  .ai-response {
+    max-height: 180px;
+  }
 }
+

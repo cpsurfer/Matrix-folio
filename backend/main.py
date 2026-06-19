@@ -51,6 +51,43 @@ ANSWERS = {
 • BTech ECE, BIT Mesra (2024-2028) - 81%
 • 12th ISC, St. Thomas School (2022-2023) - 90%
 • 10th ICSE, St. Thomas School (2020-2021) - 91.5%""",
+
+    "homoeosathi": """🏥 **HOMOEOSATHI (Homoeo-Stocx) // INTERNSHIP EXPERIENCE**
+
+🏢 **Company:** Sgtyug Technologies Pvt Ltd
+📅 **Timeline:** May 13, 2026 - June 13, 2026
+💼 **Role:** Software Engineering Intern
+
+🎯 **PROJECT OVERVIEW:**
+A premium, comprehensive pharmacy inventory management and billing system pre-configured for Awadhpuri Homoeopathic Medical Store (920, Awadhpuri Phase-2, Ayodhya) under Drug Licenses CMS(YEAR2023)/21 & CMS(YEAR2023)/13.
+
+✨ **KEY FEATURES & IMPLEMENTATIONS:**
+• Dual Storage (Online Mode via PHP REST API & Offline Mode fallback using JSON persistence in Flutter)
+• Smart Dashboard displaying Revenue, Bills count, Low Stock, Near Expiry, and Expired Stock Alerts
+• Advanced Billing System with MySQL transactions and automatic rollback on failure to prevent data corruption
+• A4/Thermal printing template (print_bill.php) with multi-row auto-formatting
+• CRUD inventory tracking (Syrup, Dilution, Globules, Mother Tincture, Trituration, etc.)
+
+🔧 **TECH STACK:**
+Flutter (Dart), PHP (OOP, REST API), MySQL, Python""",
+
+    "sgtyug": """🏢 **SGTYUG TECHNOLOGIES INTERNSHIP**
+
+📅 **Timeline:** May 13, 2026 - June 13, 2026
+💼 **Role:** Software Engineering Intern
+🎯 **Core Project:** HomoeoSathi (Homoeo-Stocx)
+
+Key Achievements:
+• Designed dual-storage offline fallback mode in Flutter
+• Built secure PHP REST API with transactional rollback database checks
+• Configured dashboard visual reporting for store metrics""",
+
+    "internship": """🏢 **INTERNSHIP: Sgtyug Technologies Pvt Ltd**
+
+📅 **Timeline:** May 13, 2026 - June 13, 2026
+💼 **Role:** Software Engineering Intern
+🎯 **Project:** HomoeoSathi (Homoeo-Stocx) — a dual-mode pharmacy billing and inventory app pre-configured for Awadhpuri Homoeopathic Medical Store.
+🔧 **Tech Stack:** Flutter, Dart, PHP (OOP), MySQL, Python""",
     
     # Skills - Technical
     "cpp": """💻 **C++ Skills:**
@@ -480,6 +517,8 @@ async def chat(query: Query):
         matched = ANSWERS["gdg"]
     elif "nss" in normalized:
         matched = ANSWERS["nss"]
+    elif "homoeo" in normalized or "sathi" in normalized or "stocx" in normalized or "sgtyug" in normalized or "internship" in normalized:
+        matched = ANSWERS["homoeosathi"]
     
     if matched:
         return {"reply": f"🤖 **Assistant:**\n\n{matched}\n\n---\n💡 Ask me anything else about Rahul's projects, skills, or experience!"}
@@ -487,7 +526,9 @@ async def chat(query: Query):
     # If no match, show helpful menu
     return {"reply": f"""🤖 **Assistant:** I can answer questions about Rahul Sahu!
 
-📁 **PROJECTS:**
+📁 **PROJECTS & EXPERIENCE:**
+• "Tell me about my Internship" at Sgtyug Technologies
+• "What is HomoeoSathi?" - Pharmacy billing system
 • "What is SafeMem?" - 4.5ns memory allocator
 • "Tell me about NanoTrade" - 17.5µs HFT engine
 • "Personal AI Assistant" - RAG with Gemini

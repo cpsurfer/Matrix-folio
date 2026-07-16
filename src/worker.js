@@ -1,6 +1,7 @@
 import { pipeline, env, TextStreamer } from '@huggingface/transformers';
 
 // Since we are running in the browser, we fetch models from the Hugging Face Hub CDN.
+env.backends.onnx.wasm.numThreads = navigator.hardwareConcurrency || 4;
 env.allowLocalModels = false;
 
 const MODEL_NAME = 'onnx-community/Qwen2.5-0.5B-Instruct';
@@ -14,7 +15,7 @@ class ChatPipeline {
     if (this.instance === null) {
       this.instance = await pipeline(this.task, this.model, {
         progress_callback,
-        dtype: 'q4', // Use 4-bit quantized model for faster download and execution
+        dtype: 'q4f16', // Use 4-bit quantized model for faster download and execution
         device: 'webgpu', // Will automatically fall back to wasm if WebGPU is not supported
       });
     }
@@ -98,7 +99,7 @@ self.addEventListener('message', async (event) => {
       const output = await generator(prompt, {
         max_new_tokens: 512,
         temperature: 0.7,
-        do_sample: true,
+        do_sample: false,
         streamer,
       });
 

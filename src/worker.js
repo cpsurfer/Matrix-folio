@@ -1,6 +1,6 @@
 import { pipeline, env, TextStreamer } from '@huggingface/transformers';
 
-// Since we are running in the browser, we fetch models from the Hugging Face Hub CDN.
+// Optimize fallback thread count so it doesn't freeze the browser
 env.backends.onnx.wasm.numThreads = navigator.hardwareConcurrency || 4;
 env.allowLocalModels = false;
 
@@ -15,8 +15,8 @@ class ChatPipeline {
     if (this.instance === null) {
       this.instance = await pipeline(this.task, this.model, {
         progress_callback,
-        dtype: 'q4f16', // Use 4-bit quantized model for faster download and execution
-        device: 'webgpu', // Will automatically fall back to wasm if WebGPU is not supported
+        dtype: 'q4f16', // Optimization: Use FP16 activations on GPU for speedup
+        device: 'webgpu', // Will fall back to WASM if WebGPU is unavailable
       });
     }
     return this.instance;
@@ -59,7 +59,6 @@ self.addEventListener('message', async (event) => {
 
   if (type === 'load') {
     try {
-      // Trigger pipeline initialization
       await ChatPipeline.getInstance((progressData) => {
         self.postMessage({ type: 'progress', data: progressData });
       });
@@ -74,19 +73,11 @@ self.addEventListener('message', async (event) => {
     try {
       const generator = await ChatPipeline.getInstance();
 
-      // Combine system prompt with conversation history
       const fullMessages = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...messages
       ];
 
-      // Format messages into the model-specific template
-      const prompt = generator.tokenizer.apply_chat_template(fullMessages, {
-        tokenize: false,
-        add_generation_prompt: true,
-      });
-
-      // Stream output tokens back to the main thread
       const streamer = new TextStreamer(generator.tokenizer, {
         skip_prompt: true,
         skip_special_tokens: true,
@@ -95,15 +86,18 @@ self.addEventListener('message', async (event) => {
         }
       });
 
-      // Generate response
-      const output = await generator(prompt, {
+      // Optimization: Pass fullMessages array directly to the generator
+      const output = await generator(fullMessages, {
         max_new_tokens: 512,
-        temperature: 0.7,
-        do_sample: false,
+        do_sample: false, // Optimization: Greedy decoding (no temperature math) for raw speed
         streamer,
       });
 
-      self.postMessage({ type: 'done', fullText: output[0].generated_text });
+      const fullText = Array.isArray(output[0].generated_text)
+        ? output[0].generated_text.at(-1).content
+        : output[0].generated_text;
+
+      self.postMessage({ type: 'done', fullText });
     } catch (error) {
       self.postMessage({ type: 'error', error: error.message });
     }

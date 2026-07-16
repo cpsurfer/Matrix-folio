@@ -458,14 +458,14 @@ SKILLS: Operations Management, Logistics, Incident Management`,
       "codeforces": `**CODEFORCES PROFILE**
 
 Handle: firstrahul39
-Max Rating: 1459 (Specialist)
+Max Rating: 1477 (Specialist)
 Problems Solved: 1000+
 Global Percentile: Top 20%
 Contests: 20+ participated
 
 PROGRESSION:
 2025: 900 (Newbie) → 1200 (Pupil)
-2026: 1200 → 1459 (Specialist)
+2026: 1200 → 1477 (Specialist)
 
 MASTERED: DP, Graph Theory, Segment Trees, String Algorithms`,
 
@@ -498,7 +498,7 @@ HARDWARE:
 • RTOS, I2C/SPI/UART Protocols
 
 DSA:
-• Codeforces 1459 (Specialist)
+• Codeforces 1477 (Specialist)
 • 1000+ problems solved`
     };
     
@@ -591,7 +591,7 @@ TECH CONCEPTS:
         <section id="home" className="hero">
           <div className="hero-grid">
             <div className="hero-left terminal-window reveal-left">
-              <div className="terminal-line">// SYSTEMS PROGRAMMER & HFT ENGINEER</div>
+              <div className="terminal-line">// SYSTEMS & ALGORITHMIC PROGRAMMER</div>
               <h1 className="hero-title">Rahul Sahu</h1>
               <h2 className="hero-subtitle">Building Low-Latency Infrastructure</h2>
               <p className="hero-desc">
@@ -610,7 +610,7 @@ TECH CONCEPTS:
                   <span className="metric-lbl">NanoTrade Latency</span>
                 </div>
                 <div className="hero-metric-card reveal-scale">
-                  <span className="metric-val">1459</span>
+                  <span className="metric-val">1477</span>
                   <span className="metric-lbl">Codeforces Rating</span>
                 </div>
               </div>
@@ -722,7 +722,7 @@ TECH CONCEPTS:
             <div className="skill-category reveal"><h3>AI/ML</h3><div className="skill-items"><span>RAG</span><span>Vector Databases</span><span>Gemini API</span><span>LangChain</span><span>Streamlit</span></div></div>
             <div className="skill-category reveal"><h3>HARDWARE</h3><div className="skill-items"><span>FPGA/Verilog</span><span>Microcontrollers</span><span>RTOS</span><span>I2C/SPI/UART</span><span>VLSI Design</span></div></div>
             <div className="skill-category reveal"><h3>DEVOPS</h3><div className="skill-items"><span>Docker</span><span>Git/GitHub</span><span>CI/CD</span><span>Linux CLI</span></div></div>
-            <div className="skill-category reveal"><h3>DSA</h3><div className="skill-items"><span>1000+ Problems</span><span>Codeforces 1459</span><span>DP/Graphs/Trees</span></div></div>
+            <div className="skill-category reveal"><h3>DSA</h3><div className="skill-items"><span>1000+ Problems</span><span>Codeforces 1477</span><span>DP/Graphs/Trees</span></div></div>
           </div>
         </section>
 
@@ -781,7 +781,7 @@ TECH CONCEPTS:
             <h2>Verified Milestones</h2>
           </div>
           <div className="achievements-grid">
-            <div className="achievement-item reveal-left"><span className="achievement-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "var(--accent-color)"}}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><div><h4>Codeforces Specialist</h4><p>Max Rating: 1459 | Solved 1000+ problems</p></div></div>
+            <div className="achievement-item reveal-left"><span className="achievement-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "var(--accent-color)"}}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><div><h4>Codeforces Specialist</h4><p>Max Rating: 1477 | Solved 1000+ problems</p></div></div>
             <div className="achievement-item reveal-left"><span className="achievement-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "var(--accent-color)"}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span><div><h4>SafeMem Allocator</h4><p>4.5ns latency, 27x faster than malloc</p></div></div>
             <div className="achievement-item reveal-left"><span className="achievement-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "var(--accent-color)"}}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg></span><div><h4>NanoTrade HFT</h4><p>17.5µs tick-to-trade, 12x faster</p></div></div>
             <div className="achievement-item reveal-left"><span className="achievement-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "var(--accent-color)"}}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M12 2v9"></path><path d="M8 5h8"></path></svg></span><div><h4>RAG AI Assistant</h4><p>Gemini 1.5 Pro document Q&A</p></div></div>

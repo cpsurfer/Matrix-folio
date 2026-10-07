@@ -13,10 +13,14 @@ export default function App() {
 
   const [useLocalLlm, setUseLocalLlm] = useState(false);
 
-  // In-browser model states
+  // In-browser model states & performance telemetry
   const [modelLoading, setModelLoading] = useState(false);
   const [modelProgress, setModelProgress] = useState({});
   const [modelReady, setModelReady] = useState(false);
+  const [inferenceDevice, setInferenceDevice] = useState(null);
+  const [modelLoadTimeMs, setModelLoadTimeMs] = useState(null);
+  const [lastMetrics, setLastMetrics] = useState(null);
+  const [liveStreamingMetrics, setLiveStreamingMetrics] = useState(null);
   const [chatHistory, setChatHistory] = useState([
     { role: 'assistant', content: "Hello! I am Rahul's AI assistant. How can I help you learn more about Rahul's work, low-latency projects, or engineering experience today?" }
   ]);
@@ -108,7 +112,7 @@ export default function App() {
     workerRef.current.postMessage({ type: 'load' });
 
     workerRef.current.onmessage = (event) => {
-      const { type, data, text, error } = event.data;
+      const { type, data, text, error, metrics, tokenCount, elapsedMs, ttftMs } = event.data;
 
       if (type === 'progress') {
         if (data.status === 'downloading' || data.status === 'progress') {
@@ -120,18 +124,33 @@ export default function App() {
       } else if (type === 'ready') {
         setModelLoading(false);
         setModelReady(true);
+        if (event.data.device) setInferenceDevice(event.data.device);
+        if (event.data.loadTimeMs) setModelLoadTimeMs(event.data.loadTimeMs);
       } else if (type === 'token') {
         streamedResponseRef.current += text;
         setAiResponse(streamedResponseRef.current);
+        if (tokenCount && elapsedMs) {
+          const elapsedSec = elapsedMs / 1000;
+          const liveSpeed = elapsedSec > 0 ? (tokenCount / elapsedSec).toFixed(1) : '0.0';
+          setLiveStreamingMetrics({
+            tokenCount,
+            elapsedMs,
+            liveSpeed,
+            ttftMs
+          });
+        }
       } else if (type === 'done') {
         setIsLoading(false);
         const finalResponse = streamedResponseRef.current;
-        setChatHistory(prev => [...prev, { role: 'assistant', content: finalResponse }]);
+        setChatHistory(prev => [...prev, { role: 'assistant', content: finalResponse, metrics }]);
+        if (metrics) setLastMetrics(metrics);
         setAiResponse('');
+        setLiveStreamingMetrics(null);
         streamedResponseRef.current = '';
       } else if (type === 'error') {
         setIsLoading(false);
         setModelLoading(false);
+        setLiveStreamingMetrics(null);
         console.error('Worker error:', error);
         setChatHistory(prev => [
           ...prev, 
@@ -159,6 +178,7 @@ export default function App() {
     setIsLoading(true);
     setShowAiResponse(true);
     setAiResponse('');
+    setLiveStreamingMetrics(null);
     streamedResponseRef.current = '';
 
     const newHistory = [...chatHistory, { role: 'user', content: query }];
@@ -177,20 +197,44 @@ export default function App() {
       } else {
         // Model not loaded yet, use fast smart answer fallback
         setLoadingMessage("📥 Model downloading... Using smart fallback.");
+        const startT = performance.now();
         setTimeout(() => {
           const answer = getSmartAnswer(query);
-          setChatHistory(prev => [...prev, { role: 'assistant', content: answer }]);
+          const endT = performance.now();
+          const latency = Number((endT - startT).toFixed(1));
+          const wordCount = answer.trim().split(/\s+/).length;
+          const fallbackMetrics = {
+            ttftMs: latency,
+            totalTimeMs: latency,
+            tokenCount: Math.round(wordCount * 1.3),
+            tokensPerSec: 'Instant (O(1))',
+            device: 'FALLBACK REGEX',
+          };
+          setChatHistory(prev => [...prev, { role: 'assistant', content: answer, metrics: fallbackMetrics }]);
+          setLastMetrics(fallbackMetrics);
           setIsLoading(false);
         }, 1000);
       }
     } else {
       // Light Mode (instant keyword matching, zero network download)
       setLoadingMessage("thinking...");
+      const startT = performance.now();
       setTimeout(() => {
         const answer = getSmartAnswer(query);
-        setChatHistory(prev => [...prev, { role: 'assistant', content: answer }]);
+        const endT = performance.now();
+        const latency = Number((endT - startT).toFixed(1));
+        const wordCount = answer.trim().split(/\s+/).length;
+        const lightMetrics = {
+          ttftMs: latency,
+          totalTimeMs: latency,
+          tokenCount: Math.round(wordCount * 1.3),
+          tokensPerSec: 'Instant (O(1))',
+          device: 'IN-MEMORY REGEX',
+        };
+        setChatHistory(prev => [...prev, { role: 'assistant', content: answer, metrics: lightMetrics }]);
+        setLastMetrics(lightMetrics);
         setIsLoading(false);
-      }, 500);
+      }, 400);
     }
   };
 
@@ -639,10 +683,44 @@ TECH CONCEPTS:
                   </button>
                 </div>
                 
+                {/* INFERENCE TELEMETRY HUD BAR */}
+                <div className="console-telemetry-hud">
+                  <div className="hud-metric">
+                    <span className="hud-lbl">DEVICE</span>
+                    <span className={`hud-val ${useLocalLlm ? 'online' : ''}`}>
+                      {useLocalLlm ? (modelReady ? (inferenceDevice || 'WEBGPU') : 'INITIALIZING') : 'FAST PATH'}
+                    </span>
+                  </div>
+                  <div className="hud-metric">
+                    <span className="hud-lbl">TTFT</span>
+                    <span className="hud-val">{lastMetrics?.ttftMs !== undefined ? `${lastMetrics.ttftMs}ms` : '--'}</span>
+                  </div>
+                  <div className="hud-metric">
+                    <span className="hud-lbl">THROUGHPUT</span>
+                    <span className="hud-val highlight">
+                      {lastMetrics?.tokensPerSec 
+                        ? (typeof lastMetrics.tokensPerSec === 'number' ? `${lastMetrics.tokensPerSec} tok/s` : lastMetrics.tokensPerSec) 
+                        : '--'}
+                    </span>
+                  </div>
+                  <div className="hud-metric">
+                    <span className="hud-lbl">LATENCY</span>
+                    <span className="hud-val">
+                      {lastMetrics?.totalTimeMs !== undefined 
+                        ? (lastMetrics.totalTimeMs < 1000 ? `${lastMetrics.totalTimeMs}ms` : `${(lastMetrics.totalTimeMs / 1000).toFixed(2)}s`) 
+                        : '--'}
+                    </span>
+                  </div>
+                  <div className="hud-metric">
+                    <span className="hud-lbl">TOKENS</span>
+                    <span className="hud-val">{lastMetrics?.tokenCount ?? '--'}</span>
+                  </div>
+                </div>
+
                 <div className="console-screen">
                   <div className="console-sys-log">
                     <span className="log-line system">[SYSTEM INITIALIZED OK]</span>
-                    <span className="log-line">Local 0.5B Parameter model loaded via WebGPU/WASM.</span>
+                    <span className="log-line">Local 0.5B Parameter model loaded via WebGPU/WASM. Telemetry Active.</span>
                   </div>
 
                   <div className="console-chat-history" ref={heroChatContainerRef}>
@@ -650,12 +728,34 @@ TECH CONCEPTS:
                       <div key={index} className={`console-msg ${msg.role}`}>
                         <span className="msg-prefix">{msg.role === 'user' ? 'guest@visitor:~$ ' : 'assistant@rahul_ai:~$ '}</span>
                         <div className="msg-txt">{msg.content}</div>
+                        {msg.metrics && (
+                          <div className="msg-telemetry-badge">
+                            <span className="metric-chip chip-device">⚡ {msg.metrics.device}</span>
+                            <span className="metric-chip">⏱️ TTFT: {msg.metrics.ttftMs}ms</span>
+                            {typeof msg.metrics.tokensPerSec === 'number' && (
+                              <span className="metric-chip chip-speed">🚀 {msg.metrics.tokensPerSec} tok/s</span>
+                            )}
+                            <span className="metric-chip">
+                              ⌛ {msg.metrics.totalTimeMs < 1000 ? `${msg.metrics.totalTimeMs}ms` : `${(msg.metrics.totalTimeMs / 1000).toFixed(2)}s`}
+                            </span>
+                            <span className="metric-chip">📊 {msg.metrics.tokenCount} tokens</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                     {aiResponse && (
                       <div className="console-msg assistant">
                         <span className="msg-prefix">assistant@rahul_ai:~$ </span>
                         <div className="msg-txt">{aiResponse}</div>
+                        {liveStreamingMetrics && (
+                          <div className="live-stream-badge">
+                            <span className="pulse-dot"></span>
+                            <span>STREAMING: {liveStreamingMetrics.tokenCount} tokens</span>
+                            <span>• {liveStreamingMetrics.liveSpeed} tok/s</span>
+                            <span>• {(liveStreamingMetrics.elapsedMs / 1000).toFixed(1)}s</span>
+                            {liveStreamingMetrics.ttftMs ? <span>• TTFT: {liveStreamingMetrics.ttftMs}ms</span> : null}
+                          </div>
+                        )}
                       </div>
                     )}
                     {isLoading && aiResponse === '' && !modelLoading && (
@@ -892,12 +992,31 @@ TECH CONCEPTS:
                 <div key={index} className={`chat-message ${msg.role}`}>
                   <span className="msg-role">{msg.role === 'user' ? '➜ Visitor: ' : '🤖 Assistant: '}</span>
                   <span className="msg-content">{msg.content}</span>
+                  {msg.metrics && (
+                    <div className="msg-telemetry-badge mini">
+                      <span className="metric-chip chip-device">⚡ {msg.metrics.device}</span>
+                      <span className="metric-chip">⏱️ {msg.metrics.ttftMs}ms TTFT</span>
+                      {typeof msg.metrics.tokensPerSec === 'number' && (
+                        <span className="metric-chip chip-speed">🚀 {msg.metrics.tokensPerSec} tok/s</span>
+                      )}
+                      <span className="metric-chip">
+                        ⌛ {msg.metrics.totalTimeMs < 1000 ? `${msg.metrics.totalTimeMs}ms` : `${(msg.metrics.totalTimeMs / 1000).toFixed(2)}s`}
+                      </span>
+                      <span className="metric-chip">📊 {msg.metrics.tokenCount} tok</span>
+                    </div>
+                  )}
                 </div>
               ))}
               {aiResponse && (
                 <div className="chat-message assistant">
                   <span className="msg-role">🤖 Assistant: </span>
                   <span className="msg-content">{aiResponse}</span>
+                  {liveStreamingMetrics && (
+                    <div className="live-stream-badge mini">
+                      <span className="pulse-dot"></span>
+                      <span>STREAMING: {liveStreamingMetrics.tokenCount} tokens • {liveStreamingMetrics.liveSpeed} tok/s</span>
+                    </div>
+                  )}
                 </div>
               )}
               {isLoading && aiResponse === '' && !modelLoading && (

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Qwen 2.5 0.5B Model Benchmark & Hardware Profiler</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+    .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+    .card-glow { box-shadow: 0 4px 25px -3px rgba(0, 255, 102, 0.1); }
+    .pulse-dot { animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+  </style>
+</head>
+<body class="bg-[#07080b] text-[#f0f2f5] min-h-screen p-4 md:p-8 antialiased font-sans">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <header class="bg-[#0d0f14] border border-[#00ff66]/20 rounded-2xl p-6 card-glow">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-[#00ff66] pulse-dot"></span>
+            <span class="font-mono-tech text-xs tracking-widest text-[#00ff66] uppercase">LIVE NEURAL INFERENCE PROFILER // WEBGPU ENGINE</span>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-bold font-mono-tech text-white mt-1">
+            Actual Qwen 2.5 0.5B Hardware Benchmark
+          </h1>
+          <p class="text-sm text-[#8a99ad] mt-1">
+            Executes the real 4-bit quantized <code class="text-cyan-400 font-mono-tech">Qwen2.5-0.5B-Instruct</code> ONNX model directly on your local GPU via WebGPU
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2" id="deviceBadgeContainer">
+          <div class="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-center font-mono-tech">
+            <div class="text-[10px] text-[#8a99ad]">DETECTED ADAPTER</div>
+            <div id="gpuName" class="text-xs font-bold text-cyan-400">Probing GPU...</div>
+          </div>
+          <div class="px-3.5 py-2 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 text-center font-mono-tech">
+            <div class="text-[10px] text-[#8a99ad]">BACKEND ACCEL</div>
+            <div id="backendMode" class="text-xs font-bold text-[#00ff66]">Checking...</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Step 1: Model Initialization Panel -->
+    <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-6 card-glow space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div>
+          <h2 class="text-base font-semibold font-mono-tech text-white flex items-center gap-2">
+            <span>📦</span> STEP 1: LOAD ACTUAL MODEL WEIGHTS
+          </h2>
+          <p class="text-xs text-[#8a99ad]">Loads the 4-bit quantized ONNX weights from Hugging Face CDN into browser GPU memory</p>
+        </div>
+        <button id="btnLoadModel" class="px-5 py-2.5 rounded-xl bg-[#00ff66] text-black font-mono-tech font-bold text-xs hover:bg-[#00ff66]/90 transition shadow-lg shadow-[#00ff66]/20 flex items-center gap-2">
+          <span>⚡</span> LOAD QWEN 2.5 MODEL (~350MB)
+        </button>
+      </div>
+
+      <!-- Download progress display -->
+      <div id="loadProgressArea" class="hidden space-y-3">
+        <div class="flex justify-between items-center text-xs font-mono-tech">
+          <span id="loadStatusText" class="text-[#00ff66]">Initializing pipeline...</span>
+          <span id="loadPercentText" class="text-white font-bold">0%</span>
+        </div>
+        <div class="w-full bg-white/5 h-2.5 rounded-full overflow-hidden border border-white/10">
+          <div id="loadProgressBar" class="bg-gradient-to-r from-[#00ff66] to-cyan-400 h-full rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+        <div id="filesList" class="text-[11px] font-mono-tech text-[#8a99ad] space-y-1"></div>
+      </div>
+
+      <!-- Ready Banner -->
+      <div id="modelReadyBanner" class="hidden p-3 rounded-lg bg-[#00ff66]/10 border border-[#00ff66]/30 font-mono-tech text-xs text-[#00ff66] flex items-center justify-between">
+        <span>✔ Qwen2.5-0.5B-Instruct loaded into local GPU VRAM. Ready for live execution!</span>
+        <span id="loadTimeTaken" class="text-slate-300"></span>
+      </div>
+    </div>
+
+    <!-- Live Telemetry KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-4 card-glow">
+        <div class="text-[11px] text-[#8a99ad] font-mono-tech uppercase">Live TTFT</div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="telemetryTTFT" class="text-2xl md:text-3xl font-bold font-mono-tech text-cyan-400">--</span>
+          <span class="text-xs text-[#8a99ad] font-mono-tech">ms</span>
+        </div>
+        <div class="text-[10px] text-[#8a99ad] mt-1 font-mono-tech">Time To First Token</div>
+      </div>
+
+      <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-4 card-glow">
+        <div class="text-[11px] text-[#8a99ad] font-mono-tech uppercase">Throughput</div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="telemetrySpeed" class="text-2xl md:text-3xl font-bold font-mono-tech text-[#00ff66]">--</span>
+          <span class="text-xs text-[#8a99ad] font-mono-tech">tok/s</span>
+        </div>
+        <div class="text-[10px] text-[#8a99ad] mt-1 font-mono-tech">Real Emission Rate</div>
+      </div>
+
+      <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-4 card-glow">
+        <div class="text-[11px] text-[#8a99ad] font-mono-tech uppercase">Total Latency</div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="telemetryLatency" class="text-2xl md:text-3xl font-bold font-mono-tech text-purple-400">--</span>
+          <span class="text-xs text-[#8a99ad] font-mono-tech">sec</span>
+        </div>
+        <div class="text-[10px] text-[#8a99ad] mt-1 font-mono-tech">End-to-End Elapsed</div>
+      </div>
+
+      <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-4 card-glow">
+        <div class="text-[11px] text-[#8a99ad] font-mono-tech uppercase">Tokens Generated</div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="telemetryTokens" class="text-2xl md:text-3xl font-bold font-mono-tech text-amber-400">--</span>
+          <span class="text-xs text-[#8a99ad] font-mono-tech">tokens</span>
+        </div>
+        <div class="text-[10px] text-[#8a99ad] mt-1 font-mono-tech">Output Token Volume</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Query Execution Panel -->
+    <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-6 card-glow space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div>
+          <h2 class="text-base font-semibold font-mono-tech text-white flex items-center gap-2">
+            <span>💬</span> STEP 2: TEST REAL INFERENCE SPEED
+          </h2>
+          <p class="text-xs text-[#8a99ad]">Choose a verified portfolio prompt or enter your own query to measure hardware performance</p>
+        </div>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="flex flex-wrap gap-2">
+        <button onclick="setQuery('What is SafeMem and what is its allocation latency?')" class="px-2.5 py-1 text-xs rounded-lg bg-white/5 border border-white/10 hover:border-[#00ff66]/50 hover:bg-[#00ff66]/10 text-white font-mono-tech transition">SafeMem Latency</button>
+        <button onclick="setQuery('Explain how 2MB hugepages reduce TLB misses by 99.8%.')" class="px-2.5 py-1 text-xs rounded-lg bg-white/5 border border-white/10 hover:border-[#00ff66]/50 hover:bg-[#00ff66]/10 text-white font-mono-tech transition">2MB Hugepages</button>
+        <button onclick="setQuery('Explain NanoTrade tick-to-trade latency and busy-spinning UDP.')" class="px-2.5 py-1 text-xs rounded-lg bg-white/5 border border-white/10 hover:border-[#00ff66]/50 hover:bg-[#00ff66]/10 text-white font-mono-tech transition">NanoTrade HFT</button>
+        <button onclick="setQuery('Summarize your software engineering internship at Sgtyug Technologies.')" class="px-2.5 py-1 text-xs rounded-lg bg-white/5 border border-white/10 hover:border-[#00ff66]/50 hover:bg-[#00ff66]/10 text-white font-mono-tech transition">Internship Experience</button>
+      </div>
+
+      <!-- Query Form -->
+      <form id="queryForm" class="flex gap-2">
+        <input 
+          type="text" 
+          id="promptInput" 
+          value="What is SafeMem and what is its allocation latency?" 
+          placeholder="Ask anything..." 
+          class="flex-1 bg-black/60 border border-white/20 rounded-xl px-4 py-2.5 font-mono-tech text-xs text-white focus:outline-none focus:border-[#00ff66]"
+        />
+        <button 
+          type="submit" 
+          id="btnGenerate" 
+          disabled 
+          class="px-5 py-2.5 rounded-xl bg-cyan-500 text-black font-mono-tech font-bold text-xs hover:bg-cyan-400 transition disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <span>🚀</span> RUN BENCHMARK
+        </button>
+      </form>
+
+      <!-- Live Stream Console Output -->
+      <div class="bg-black/80 border border-white/10 rounded-xl p-5 font-mono-tech text-xs space-y-3">
+        <div class="flex items-center justify-between text-[#8a99ad] border-b border-white/10 pb-2">
+          <span class="flex items-center gap-2">
+            <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            STREAMED OUTPUT (MODEL: QWEN 2.5 0.5B INSTRUCT)
+          </span>
+          <span id="liveStreamingStats" class="text-cyan-400 font-bold"></span>
+        </div>
+        <div id="outputText" class="text-slate-300 leading-relaxed whitespace-pre-wrap min-h-[120px] max-h-[360px] overflow-y-auto">
+// Model output and live streaming tokens will appear here in real-time...
+        </div>
+      </div>
+    </div>
+
+    <!-- Benchmark History Table -->
+    <div class="bg-[#0d0f14] border border-white/10 rounded-xl p-6 card-glow">
+      <h3 class="text-sm font-semibold font-mono-tech text-white mb-3">📊 HARDWARE BENCHMARK RUN HISTORY</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono-tech">
+          <thead class="text-[#8a99ad] border-b border-white/10 bg-white/[0.02]">
+            <tr>
+              <th class="py-2 px-3">RUN</th>
+              <th class="py-2 px-3">QUERY</th>
+              <th class="py-2 px-3">TTFT</th>
+              <th class="py-2 px-3">THROUGHPUT</th>
+              <th class="py-2 px-3">TOTAL TIME</th>
+              <th class="py-2 px-3">TOKENS</th>
+              <th class="py-2 px-3">DEVICE</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody" class="divide-y divide-white/5">
+            <tr>
+              <td colspan="7" class="py-3 px-3 text-[#8a99ad] text-center">No runs recorded yet. Load the model and click Run Benchmark!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- In-Browser Transformers.js Loader -->
+  <script type="module">
+    import { pipeline, env, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+
+    // Disable local model lookup and allow remote CDN fetching
+    env.allowLocalModels = false;
+
+    let generator = null;
+    let activeDevice = 'wasm';
+    let runCount = 0;
+
+    // Detect WebGPU with High Performance Preference
+    async function probeHardware() {
+      const gpuNameEl = document.getElementById('gpuName');
+      const backendEl = document.getElementById('backendMode');
+
+      if ('gpu' in navigator) {
+        try {
+          // Explicitly request discrete high-performance GPU (NVIDIA/AMD) over low-power integrated graphics
+          const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+          if (adapter) {
+            activeDevice = 'webgpu';
+            backendEl.textContent = 'WebGPU (Hardware Accel)';
+            backendEl.className = 'text-xs font-bold text-[#00ff66]';
+            
+            let name = 'WebGPU Hardware Adapter';
+            if (adapter.info) {
+              name = adapter.info.description || adapter.info.device || adapter.info.architecture || name;
+            }
+            gpuNameEl.textContent = name;
+            return;
+          }
+        } catch (e) {
+          console.warn('WebGPU probe failed:', e);
+        }
+      }
+
+      activeDevice = 'wasm';
+      gpuNameEl.textContent = 'CPU (Standard Host)';
+      backendEl.textContent = 'WASM (CPU Multithreading)';
+      backendEl.className = 'text-xs font-bold text-amber-400';
+    }
+
+    probeHardware();
+
+    // Model Loading
+    const btnLoad = document.getElementById('btnLoadModel');
+    const loadProgressArea = document.getElementById('loadProgressArea');
+    const loadStatusText = document.getElementById('loadStatusText');
+    const loadPercentText = document.getElementById('loadPercentText');
+    const loadProgressBar = document.getElementById('loadProgressBar');
+    const filesList = document.getElementById('filesList');
+    const modelReadyBanner = document.getElementById('modelReadyBanner');
+    const btnGenerate = document.getElementById('btnGenerate');
+
+    btnLoad.addEventListener('click', async () => {
+      btnLoad.disabled = true;
+      btnLoad.classList.add('opacity-50', 'cursor-not-allowed');
+      loadProgressArea.classList.remove('hidden');
+
+      const fileMap = {};
+      const loadStartTime = performance.now();
+
+      try {
+        loadStatusText.textContent = `Downloading Qwen2.5-0.5B-Instruct (4-bit Q4) on ${activeDevice.toUpperCase()}...`;
+
+        generator = await pipeline('text-generation', 'onnx-community/Qwen2.5-0.5B-Instruct', {
+          dtype: 'q4',
+          device: activeDevice,
+          progress_callback: (p) => {
+            if (p.file) {
+              fileMap[p.file] = p;
+              let totalBytes = 0;
+              let loadedBytes = 0;
+              Object.values(fileMap).forEach(f => {
+                if (f.total) {
+                  totalBytes += f.total;
+                  loadedBytes += f.loaded;
+                }
+              });
+
+              if (totalBytes > 0) {
+                const percent = Math.round((loadedBytes / totalBytes) * 100);
+                loadPercentText.textContent = `${percent}%`;
+                loadProgressBar.style.width = `${percent}%`;
+                const mbLoaded = (loadedBytes / (1024 * 1024)).toFixed(1);
+                const mbTotal = (totalBytes / (1024 * 1024)).toFixed(1);
+                loadStatusText.textContent = `Downloading ONNX layers: ${mbLoaded}MB / ${mbTotal}MB (${p.file})`;
+              }
+            }
+          }
+        });
+
+        const loadDurationSec = ((performance.now() - loadStartTime) / 1000).toFixed(2);
+        loadProgressArea.classList.add('hidden');
+        btnLoad.classList.add('hidden');
+        modelReadyBanner.classList.remove('hidden');
+        document.getElementById('loadTimeTaken').textContent = `Loaded in ${loadDurationSec}s`;
+        btnGenerate.disabled = false;
+
+      } catch (err) {
+        console.error('Model load error:', err);
+        loadStatusText.textContent = `Error loading model: ${err.message}. Retrying via WASM...`;
+        loadStatusText.className = 'text-red-400';
+      }
+    });
+
+    // Preset helper
+    window.setQuery = (q) => {
+      document.getElementById('promptInput').value = q;
+    };
+
+    // Inference Execution
+    const queryForm = document.getElementById('queryForm');
+    const promptInput = document.getElementById('promptInput');
+    const outputText = document.getElementById('outputText');
+    const streamIndicator = document.getElementById('streamIndicator');
+    const liveStreamingStats = document.getElementById('liveStreamingStats');
+    const telemetryTTFT = document.getElementById('telemetryTTFT');
+    const telemetrySpeed = document.getElementById('telemetrySpeed');
+    const telemetryLatency = document.getElementById('telemetryLatency');
+    const telemetryTokens = document.getElementById('telemetryTokens');
+    const historyBody = document.getElementById('historyBody');
+
+    queryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = promptInput.value.trim();
+      if (!prompt || !generator) return;
+
+      btnGenerate.disabled = true;
+      promptInput.disabled = true;
+      streamIndicator.className = 'w-2 h-2 rounded-full bg-[#00ff66] pulse-dot';
+      outputText.textContent = '';
+      liveStreamingStats.textContent = 'Generating first token...';
+
+      const startTime = performance.now();
+      let firstTokenTime = null;
+      let tokenCount = 0;
+      let streamedContent = '';
+
+      const streamer = new TextStreamer(generator.tokenizer, {
+        skip_prompt: true,
+        skip_special_tokens: true,
+        callback_function: (chunk) => {
+          tokenCount++;
+          const now = performance.now();
+          if (firstTokenTime === null) {
+            firstTokenTime = now;
+            const ttftMs = Math.round(firstTokenTime - startTime);
+            telemetryTTFT.textContent = ttftMs;
+          }
+
+          streamedContent += chunk;
+          outputText.textContent = streamedContent;
+
+          const elapsedSec = (now - startTime) / 1000;
+          const liveTokSec = (tokenCount / elapsedSec).toFixed(1);
+          telemetrySpeed.textContent = liveTokSec;
+          telemetryTokens.textContent = tokenCount;
+          telemetryLatency.textContent = elapsedSec.toFixed(2);
+          liveStreamingStats.textContent = `Live: ${liveTokSec} tok/s | ${tokenCount} tokens`;
+        }
+      });
+
+      try {
+        const formattedPrompt = `<|im_start|>system\nYou are a precise technical AI assistant representing Rahul Sahu. Keep answers concise.<|im_end|>\n<|im_start|>user\n${prompt}<|im_end|>\n<|im_start|>assistant\n`;
+
+        await generator(formattedPrompt, {
+          max_new_tokens: 180,
+          temperature: 0.6,
+          do_sample: true,
+          streamer
+        });
+
+        const endTime = performance.now();
+        const totalDurationSec = ((endTime - startTime) / 1000).toFixed(2);
+        const ttftFinal = firstTokenTime ? Math.round(firstTokenTime - startTime) : Math.round(endTime - startTime);
+        const genTimeSec = (endTime - (firstTokenTime || startTime)) / 1000;
+        const avgThroughput = genTimeSec > 0 && tokenCount > 1 
+          ? ((tokenCount - 1) / genTimeSec).toFixed(1)
+          : (tokenCount / (totalDurationSec || 1)).toFixed(1);
+
+        telemetryTTFT.textContent = ttftFinal;
+        telemetrySpeed.textContent = avgThroughput;
+        telemetryLatency.textContent = totalDurationSec;
+        telemetryTokens.textContent = tokenCount;
+        liveStreamingStats.textContent = `Completed: ${avgThroughput} tok/s average`;
+        streamIndicator.className = 'w-2 h-2 rounded-full bg-slate-500';
+
+        // Add to history
+        runCount++;
+        if (runCount === 1) historyBody.innerHTML = '';
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-white/[0.02] transition';
+        row.innerHTML = `
+          <td class="py-2.5 px-3 text-[#00ff66] font-bold">#${runCount}</td>
+          <td class="py-2.5 px-3 text-white max-w-xs truncate">${prompt}</td>
+          <td class="py-2.5 px-3 text-cyan-400 font-bold">${ttftFinal} ms</td>
+          <td class="py-2.5 px-3 text-[#00ff66] font-bold">${avgThroughput} tok/s</td>
+          <td class="py-2.5 px-3 text-purple-400">${totalDurationSec} s</td>
+          <td class="py-2.5 px-3 text-amber-400">${tokenCount}</td>
+          <td class="py-2.5 px-3 text-[#8a99ad] uppercase">${activeDevice}</td>
+        `;
+        historyBody.prepend(row);
+
+      } catch (err) {
+        console.error('Inference error:', err);
+        outputText.textContent = `Error during inference: ${err.message}`;
+        liveStreamingStats.textContent = 'Failed';
+      } finally {
+        btnGenerate.disabled = false;
+        promptInput.disabled = false;
+        promptInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>

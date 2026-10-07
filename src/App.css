@@ -360,6 +360,132 @@ section {
   border-radius: 4px;
 }
 
+/* Telemetry HUD Bar */
+.console-telemetry-hud {
+  background: rgba(4, 7, 12, 0.95);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.hud-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-lbl {
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hud-val {
+  color: var(--text-secondary);
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hud-val.online {
+  color: var(--accent-color);
+  border-color: rgba(0, 255, 102, 0.2);
+}
+
+.hud-val.highlight {
+  color: #00ffcc;
+  border-color: rgba(0, 255, 204, 0.2);
+}
+
+/* Telemetry Badges under Assistant Messages */
+.msg-telemetry-badge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(0, 255, 102, 0.15);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.msg-telemetry-badge.mini {
+  margin-top: 6px;
+  padding-top: 4px;
+  font-size: 0.65rem;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: rgba(0, 255, 102, 0.05);
+  border: 1px solid rgba(0, 255, 102, 0.18);
+  border-radius: 4px;
+  color: #a8f0b4;
+  white-space: nowrap;
+}
+
+.metric-chip.chip-device {
+  background: rgba(0, 255, 102, 0.12);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.metric-chip.chip-speed {
+  background: rgba(0, 255, 204, 0.1);
+  border-color: rgba(0, 255, 204, 0.3);
+  color: #00ffcc;
+  font-weight: bold;
+}
+
+/* Live Streaming Telemetry HUD */
+.live-stream-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 3px 8px;
+  background: rgba(0, 255, 102, 0.1);
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  color: var(--accent-color);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  animation: pulse-border 1.5s infinite;
+}
+
+.live-stream-badge.mini {
+  margin-top: 6px;
+  padding: 2px 6px;
+  font-size: 0.62rem;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-color);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(0, 255, 102, 0.3); }
+  50% { border-color: rgba(0, 255, 102, 0.8); }
+  100% { border-color: rgba(0, 255, 102, 0.3); }
+}
+
 .console-screen {
   flex: 1;
   display: flex;

@@ -9,16 +9,30 @@ class ChatPipeline {
   static task = 'text-generation';
   static model = MODEL_NAME;
   static instance = null;
+  static device = 'wasm';
 
   static async getInstance(progress_callback = null) {
     if (this.instance === null) {
+      let targetDevice = 'wasm';
+      try {
+        if (typeof navigator !== 'undefined' && navigator.gpu) {
+          const adapter = await navigator.gpu.requestAdapter();
+          if (adapter) {
+            targetDevice = 'webgpu';
+          }
+        }
+      } catch (e) {
+        targetDevice = 'wasm';
+      }
+
       this.instance = await pipeline(this.task, this.model, {
         progress_callback,
         dtype: 'q4', // Use 4-bit quantized model for faster download and execution
-        device: 'webgpu', // Will automatically fall back to wasm if WebGPU is not supported
+        device: targetDevice, // Will automatically fall back to wasm if WebGPU is not supported
       });
+      this.device = targetDevice;
     }
-    return this.instance;
+    return { instance: this.instance, device: this.device };
   }
 }
 
@@ -57,12 +71,14 @@ self.addEventListener('message', async (event) => {
   const { type, messages } = event.data;
 
   if (type === 'load') {
+    const loadStartTime = performance.now();
     try {
       // Trigger pipeline initialization
-      await ChatPipeline.getInstance((progressData) => {
+      const { device } = await ChatPipeline.getInstance((progressData) => {
         self.postMessage({ type: 'progress', data: progressData });
       });
-      self.postMessage({ type: 'ready' });
+      const loadTimeMs = Math.round(performance.now() - loadStartTime);
+      self.postMessage({ type: 'ready', device: device.toUpperCase(), loadTimeMs });
     } catch (error) {
       self.postMessage({ type: 'error', error: error.message });
     }
@@ -71,7 +87,7 @@ self.addEventListener('message', async (event) => {
 
   if (type === 'generate') {
     try {
-      const generator = await ChatPipeline.getInstance();
+      const { instance: generator, device } = await ChatPipeline.getInstance();
 
       // Combine system prompt with conversation history
       const fullMessages = [
@@ -85,12 +101,28 @@ self.addEventListener('message', async (event) => {
         add_generation_prompt: true,
       });
 
+      const startTime = performance.now();
+      let firstTokenTime = null;
+      let tokenCount = 0;
+
       // Stream output tokens back to the main thread
       const streamer = new TextStreamer(generator.tokenizer, {
         skip_prompt: true,
         skip_special_tokens: true,
         callback_function: (text) => {
-          self.postMessage({ type: 'token', text });
+          tokenCount++;
+          const now = performance.now();
+          if (firstTokenTime === null) {
+            firstTokenTime = now;
+          }
+          const elapsedMs = Math.round(now - startTime);
+          self.postMessage({ 
+            type: 'token', 
+            text,
+            tokenCount,
+            elapsedMs,
+            ttftMs: Math.round(firstTokenTime - startTime)
+          });
         }
       });
 
@@ -102,7 +134,25 @@ self.addEventListener('message', async (event) => {
         streamer,
       });
 
-      self.postMessage({ type: 'done', fullText: output[0].generated_text });
+      const endTime = performance.now();
+      const totalTimeMs = Math.round(endTime - startTime);
+      const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : totalTimeMs;
+      const genTimeSec = (endTime - (firstTokenTime || startTime)) / 1000;
+      const tokensPerSec = genTimeSec > 0 && tokenCount > 1
+        ? Number(((tokenCount - 1) / genTimeSec).toFixed(1))
+        : Number((tokenCount / (totalTimeMs / 1000 || 1)).toFixed(1));
+
+      self.postMessage({ 
+        type: 'done', 
+        fullText: output[0].generated_text,
+        metrics: {
+          ttftMs,
+          totalTimeMs,
+          tokenCount,
+          tokensPerSec,
+          device: device.toUpperCase(),
+        }
+      });
     } catch (error) {
       self.postMessage({ type: 'error', error: error.message });
     }
